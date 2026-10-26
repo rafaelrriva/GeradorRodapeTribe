@@ -141,6 +141,20 @@
     </div>
 
     <!-- ---------------------------------------------------------------
+         SEÇÕES (Realização, Patrocínio, Apoio educacional…)
+         Cada cartão é criado pelo script.js (renderSecs) e funciona
+         como área de soltar logos (drag and drop).
+         --------------------------------------------------------------- -->
+    <div class="secs-head">
+      <h2 class="hi">
+        <svg class="i" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 3v18M15 3v18"/></svg>Seções
+      </h2>
+      <button class="btn" id="addSec">Adicionar seção</button>
+    </div>
+    <div class="secs" id="secs"></div>
+  </main>
+
+    <!-- ---------------------------------------------------------------
          PRÉVIA (palco xadrez = transparência)
          O <canvas id="cv"> é desenhado pelo script.js (função render).
          --------------------------------------------------------------- -->
@@ -170,20 +184,6 @@
         </button>
       </div>
     </div>
-
-    <!-- ---------------------------------------------------------------
-         SEÇÕES (Realização, Patrocínio, Apoio educacional…)
-         Cada cartão é criado pelo script.js (renderSecs) e funciona
-         como área de soltar logos (drag and drop).
-         --------------------------------------------------------------- -->
-    <div class="secs-head">
-      <h2 class="hi">
-        <svg class="i" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 3v18M15 3v18"/></svg>Seções
-      </h2>
-      <button class="btn" id="addSec">Adicionar seção</button>
-    </div>
-    <div class="secs" id="secs"></div>
-  </main>
 
 
   <!-- ===================================================================
