@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<!--
+  =====================================================================
+  GERADOR DE RODAPÉ DE LOGOS — index.html (versão GitHub Pages)
+  ---------------------------------------------------------------------
+  Site estático, pronto para o GitHub Pages. Arquivos:
+
+    index.html            → marcação da página
+    style.css             → visual (cores da identidade, layout)
+    script.js             → comportamento (layout, desenho, exportação)
+    logos/logos.json      → LISTA DE LOGOS E TEMPLATES (o administrador
+                            edita este arquivo para incluir logos)
+    logos/grupo/          → PNGs dos logos do grupo
+    logos/farmaceuticas/  → PNGs dos logos das farmacêuticas
+
+  Para testar no computador, use um servidor local (ex.: na pasta,
+  `python -m http.server` e abra http://localhost:8000). Aberto com
+  duplo clique (file://), o navegador bloqueia a leitura dos logos.
+  =====================================================================
+-->
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <!-- viewport-fit=cover: permite usar as áreas seguras do celular (notch) -->
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Gerador de rodapé</title>
+  <meta name="description" content="Gere rodapés de logos (Realização, Patrocínio, Apoio educacional) em PNG, 1920 × 1080 e PSD.">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%23563f99'/%3E%3Crect x='6' y='19' width='20' height='7' rx='2' fill='%23f3f3f3'/%3E%3C/svg%3E">
+
+  <!-- Fonte Montserrat (Google Fonts), pesos 400 a 800, usada na
+       interface e nos títulos desenhados dentro do rodapé -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+  <!-- Estilos do site -->
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<!-- =====================================================================
+     .app — grade principal da página
+     Coluna 1: painel lateral (Biblioteca OU Ajustes, alternados por abas)
+     Coluna 2: área de trabalho (templates, prévia, vídeo e seções)
+     ===================================================================== -->
+<div class="app">
+
+  <!-- ===================================================================
+       PAINEL LATERAL — ABA "BIBLIOTECA"
+       Lista todos os logos (grupo, farmacêuticas e enviados), com
+       pesquisa, filtros e o botão para enviar um logo novo.
+       =================================================================== -->
+  <aside class="panel" id="paneLib" aria-label="Biblioteca de logos">
+
+    <!-- Abas do painel lateral. Existe uma cópia desta barra em cada
+         painel; o script.js mantém as duas sincronizadas. -->
+    <div class="ptabs" role="tablist">
+      <button role="tab" data-pane="lib" aria-selected="true">
+        <svg class="i" viewBox="0 0 24 24"><rect x="7" y="3" width="14" height="14" rx="2"/><path d="M3 7v12a2 2 0 0 0 2 2h12"/><circle cx="12" cy="8" r="1.5"/><path d="m21 13-3-3-6 6"/></svg>Biblioteca
+      </button>
+      <button role="tab" data-pane="set" aria-selected="false">
+        <svg class="i" viewBox="0 0 24 24"><path d="M4 6h10M18 6h2M4 12h4M12 12h8M4 18h12"/><circle cx="16" cy="6" r="2"/><circle cx="10" cy="12" r="2"/><circle cx="18" cy="18" r="2"/></svg>Ajustes
+      </button>
+    </div>
+
+    <p class="small muted">Arraste para uma seção ou clique para adicionar à seção selecionada.</p>
+
+    <!-- Campo de pesquisa: filtra a biblioteca pelo nome (ignora acentos) -->
+    <input class="search" id="q" type="search" placeholder="Pesquisar logo…" autocomplete="off">
+
+    <!-- Filtros por categoria. data-f é o valor lido pelo script.js -->
+    <div class="tabs" role="group" aria-label="Filtrar">
+      <button class="tab" data-f="all" aria-pressed="true">Todos</button>
+      <button class="tab" data-f="grupo" aria-pressed="false">Grupo</button>
+      <button class="tab" data-f="farma" aria-pressed="false">Farmacêuticas</button>
+    </div>
+
+    <!-- Grade de logos: preenchida pelo script.js (função renderLib).
+         O primeiro bloco é sempre “+ Novo logo”, que envia o logo
+         direto para a categoria aberta (Grupo ou Farmacêuticas). -->
+    <div class="lib" id="lib"></div>
+
+    <!-- Mensagem sobre o carregamento do logos.json e logos locais -->
+    <p class="status" id="status">Carregando logos…</p>
+  </aside>
+
+
+  <!-- ===================================================================
+       ÁREA DE TRABALHO
+       =================================================================== -->
+  <main>
+
+    <!-- ---------------------------------------------------------------
+         TEMPLATES BÁSICOS (barra fixa no topo)
+         Fica grudada no topo ao rolar a página (position: sticky).
+         Os botões são criados pelo script.js (renderTemplates). O botão
+         do template em uso fica destacado em roxo (aria-pressed).
+         --------------------------------------------------------------- -->
+    <div class="tplbar" id="tpl">
+      <span class="hi tpl-label">
+        <svg class="i" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="7" rx="1"/><rect x="3" y="14" width="9" height="7" rx="1"/><rect x="16" y="14" width="5" height="7" rx="1"/></svg>Templates básicos
+      </span>
+      <div class="tpl-btns" id="tplGrid" role="group" aria-label="Templates básicos"></div>
+    </div>
+
+    <!-- ---------------------------------------------------------------
+         CABEÇALHO DO RODAPÉ: título, dimensões atuais e downloads
+         #dims e #fitnote são atualizados a cada redesenho.
+         --------------------------------------------------------------- -->
+    <div class="top">
+      <div>
+        <h1 class="hi">
+          <svg class="i" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 15h18"/></svg>Rodapé de logos
+        </h1>
+        <p class="small muted">PNG com fundo transparente · <span class="dims" id="dims">—</span> <span id="fitnote"></span></p>
+      </div>
+      <div class="actions">
+        <!-- PSD: .zip com PSD (2 artboards, camadas separadas) + PNGs -->
+        <button class="btn" id="psdBtn">
+          <svg class="i" viewBox="0 0 24 24"><path d="M12 3v12M7 10l5 5 5-5M4 21h16"/></svg>Baixar PSD
+        </button>
+        <!-- PNG: só o rodapé, no tamanho calculado (máx. 1080 × 600) -->
+        <button class="btn primary" id="pngBtn">
+          <svg class="i" viewBox="0 0 24 24"><path d="M12 3v12M7 10l5 5 5-5M4 21h16"/></svg>Baixar PNG
+        </button>
+      </div>
+    </div>
+
+    <!-- ---------------------------------------------------------------
+         PRÉVIA (palco xadrez = transparência)
+         O <canvas id="cv"> é desenhado pelo script.js (função render).
+         --------------------------------------------------------------- -->
+    <div class="stage" id="stage">
+      <canvas id="cv" aria-label="Prévia do rodapé"></canvas>
+      <p class="empty-msg" id="emptyMsg" hidden>Adicione logos às seções abaixo para montar o rodapé.</p>
+    </div>
+
+    <!-- ---------------------------------------------------------------
+         QUADRO DE VÍDEO 1920 × 1080
+         Miniatura (#vcv) mostra onde o rodapé fica no quadro. O controle
+         de espaço até a borda inferior altera a posição em tempo real.
+         --------------------------------------------------------------- -->
+    <div class="vid">
+      <canvas id="vcv" width="960" height="540" aria-label="Prévia do quadro 1920 × 1080"></canvas>
+      <div class="vid-ctl">
+        <h2 class="hi">
+          <svg class="i" viewBox="0 0 24 24"><rect x="2" y="4" width="20" height="13" rx="2"/><path d="M8 21h8M12 17v4"/><path d="m10 8 5 2.5-5 2.5z"/></svg>Quadro de vídeo 1920 × 1080
+        </h2>
+        <p class="small muted">O rodapé fica centralizado na parte de baixo do quadro, com o resto transparente.</p>
+        <div class="field">
+          <label for="s_vMargin">Espaço até a borda inferior <output id="o_vMargin"></output></label>
+          <input type="range" id="s_vMargin" min="0" max="400" step="2">
+        </div>
+        <button class="btn" id="vidBtn">
+          <svg class="i" viewBox="0 0 24 24"><path d="M12 3v12M7 10l5 5 5-5M4 21h16"/></svg>Baixar 1920 × 1080
+        </button>
+      </div>
+    </div>
+
+    <!-- ---------------------------------------------------------------
+         SEÇÕES (Realização, Patrocínio, Apoio educacional…)
+         Cada cartão é criado pelo script.js (renderSecs) e funciona
+         como área de soltar logos (drag and drop).
+         --------------------------------------------------------------- -->
+    <div class="secs-head">
+      <h2 class="hi">
+        <svg class="i" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 3v18M15 3v18"/></svg>Seções
+      </h2>
+      <button class="btn" id="addSec">Adicionar seção</button>
+    </div>
+    <div class="secs" id="secs"></div>
+  </main>
+
+
+  <!-- ===================================================================
+       PAINEL LATERAL — ABA "AJUSTES"
+       Ocupa o mesmo lugar da Biblioteca (oculto até trocar de aba).
+       Cada controle tem id="s_<chave>", e a chave corresponde a um
+       campo de state.settings no script.js. Os <output id="o_<chave>">
+       mostram o valor atual dos controles deslizantes.
+       =================================================================== -->
+  <aside class="panel" id="paneSet" aria-label="Ajustes do rodapé" hidden>
+    <div class="ptabs" role="tablist">
+      <button role="tab" data-pane="lib" aria-selected="false">
+        <svg class="i" viewBox="0 0 24 24"><rect x="7" y="3" width="14" height="14" rx="2"/><path d="M3 7v12a2 2 0 0 0 2 2h12"/><circle cx="12" cy="8" r="1.5"/><path d="m21 13-3-3-6 6"/></svg>Biblioteca
+      </button>
+      <button role="tab" data-pane="set" aria-selected="true">
+        <svg class="i" viewBox="0 0 24 24"><path d="M4 6h10M18 6h2M4 12h4M12 12h8M4 18h12"/><circle cx="16" cy="6" r="2"/><circle cx="10" cy="12" r="2"/><circle cx="18" cy="18" r="2"/></svg>Ajustes
+      </button>
+    </div>
+
+    <!-- Disposição das seções: lado a lado (padrão), empilhadas ou automática -->
+    <div class="field">
+      <label for="s_layout">Disposição</label>
+      <select id="s_layout">
+        <option value="row">Seções lado a lado</option>
+        <option value="stack">Seções empilhadas</option>
+        <option value="auto">Automática</option>
+      </select>
+    </div>
+    <label class="check"><input type="checkbox" id="s_fill"> Ocupar largura total (1080 px)</label>
+
+    <!-- Tamanho e espaçamento dos logos e da caixa -->
+    <div class="field"><label for="s_logoH">Altura dos logos <output id="o_logoH"></output></label><input type="range" id="s_logoH" min="24" max="140" step="1"></div>
+    <div class="field"><label for="s_maxW">Largura máx. do logo <output id="o_maxW"></output></label><input type="range" id="s_maxW" min="60" max="360" step="2"></div>
+    <div class="field"><label for="s_gap">Espaço entre logos <output id="o_gap"></output></label><input type="range" id="s_gap" min="6" max="80" step="1"></div>
+    <div class="field"><label for="s_secGap">Espaço até a linha <output id="o_secGap"></output></label><input type="range" id="s_secGap" min="8" max="80" step="1"></div>
+    <div class="field"><label for="s_pad">Margem interna <output id="o_pad"></output></label><input type="range" id="s_pad" min="10" max="80" step="1"></div>
+    <div class="field"><label for="s_radius">Arredondamento <output id="o_radius"></output></label><input type="range" id="s_radius" min="0" max="80" step="1"></div>
+
+    <hr class="sep">
+
+    <!-- Títulos das seções (Montserrat) -->
+    <div class="field"><label for="s_titleSize">Tamanho do título <output id="o_titleSize"></output></label><input type="range" id="s_titleSize" min="9" max="32" step="1"></div>
+    <div class="row2">
+      <div class="field">
+        <label for="s_titleWeight">Peso</label>
+        <select id="s_titleWeight">
+          <option value="400">Regular</option><option value="500">Medium</option><option value="600">SemiBold</option>
+          <option value="700">Bold</option><option value="800">ExtraBold</option>
+        </select>
+      </div>
+      <div class="field">
+        <label for="s_align">Alinhamento</label>
+        <select id="s_align"><option value="center">Centro</option><option value="left">Esquerda</option></select>
+      </div>
+    </div>
+    <label class="check"><input type="checkbox" id="s_upper"> Títulos em maiúsculas</label>
+
+    <!-- Cores: seletor livre + atalhos com as cores da identidade
+         (.swatches é preenchido pelo script.js; data-for = id do campo) -->
+    <div class="field"><span class="lbl">Cor do título</span>
+      <div class="colorrow"><input type="color" id="s_titleColor" aria-label="Cor do título"><div class="swatches" data-for="s_titleColor"></div></div>
+    </div>
+
+    <hr class="sep">
+
+    <!-- Linha divisória entre seções -->
+    <div class="field"><span class="lbl">Cor da linha</span>
+      <div class="colorrow"><input type="color" id="s_lineColor" aria-label="Cor da linha"><div class="swatches" data-for="s_lineColor"></div></div>
+    </div>
+    <div class="field"><label for="s_lineW">Espessura da linha <output id="o_lineW"></output></label><input type="range" id="s_lineW" min="0" max="4" step="0.5"></div>
+
+    <!-- Fundo da caixa do rodapé (padrão branco) -->
+    <div class="field"><span class="lbl">Cor do fundo</span>
+      <div class="colorrow"><input type="color" id="s_bg" aria-label="Cor do fundo"><div class="swatches" data-for="s_bg"></div></div>
+    </div>
+
+    <hr class="sep">
+    <button class="btn" id="resetBtn">Restaurar padrão</button>
+  </aside>
+</div>
+
+
+<!-- =====================================================================
+     JANELA DE ENVIO DE LOGO (<dialog>)
+     Fluxo: escolher/soltar arquivo → prévia já tratada (fundo branco
+     removido e margens recortadas, opcional) → nome → salvar.
+     ===================================================================== -->
+<dialog id="dlg">
+  <div class="dlg">
+    <div class="sec-top">
+      <h2 id="dlgTitle" class="dlg-title">Enviar logo</h2>
+      <button class="ico del" id="upX" type="button" aria-label="Fechar">×</button>
+    </div>
+
+    <div class="field"><label for="upName">Nome</label><input class="txt" id="upName" placeholder="Ex.: Laboratório Exemplo" autocomplete="off"></div>
+
+    <!-- Categoria do logo (vem preenchida com a aba aberta; oculta ao
+         preencher uma vaga de farmacêutica, que já tem categoria) -->
+    <div class="field" id="upGroupField">
+      <label for="upGroup">Categoria</label>
+      <select id="upGroup"><option value="grupo">Grupo</option><option value="farma">Farmacêuticas</option></select>
+    </div>
+
+    <!-- Área de soltar arquivo; o <input type=file> real fica oculto -->
+    <div class="drop-file" id="dropFile" tabindex="0" role="button">
+      Solte o arquivo aqui ou clique para escolher<br><span class="note">PNG, JPG, SVG ou WEBP</span>
+    </div>
+    <input type="file" id="upFile" accept="image/png,image/jpeg,image/svg+xml,image/webp" hidden>
+
+    <!-- Prévia do logo depois do tratamento -->
+    <div class="prev" id="upPrev" hidden><img id="upImg" alt=""></div>
+
+    <label class="check"><input type="checkbox" id="upKey" checked> Remover fundo branco e recortar margens</label>
+    <p class="note" id="upNote"></p>
+
+    <!-- Aviso: logos enviados pelo site ficam só neste navegador -->
+    <p class="note">O logo fica salvo só neste navegador. Para disponibilizar para todos, use “Baixar PNG tratado” e adicione o arquivo no GitHub (veja o tutorial).</p>
+
+    <div class="dlg-actions">
+      <!-- Para o administrador: baixa o PNG limpo, pronto para o repositório -->
+      <button class="btn" id="upDownload" type="button" disabled style="margin-right:auto">Baixar PNG tratado</button>
+      <button class="btn" id="upCancel" type="button">Cancelar</button>
+      <button class="btn primary" id="upSave" type="button" disabled>Salvar logo</button>
+    </div>
+  </div>
+</dialog>
+
+<!-- Aviso flutuante (mensagens curtas de confirmação e erro) -->
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<!-- Comportamento do site. Fica no fim do <body> para que todos os
+     elementos acima já existam quando o script rodar. -->
+<script src="script.js"></script>
+</body>
+</html>

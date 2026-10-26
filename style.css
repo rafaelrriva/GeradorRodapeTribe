@@ -1,0 +1,597 @@
+/* =====================================================================
+   GERADOR DE RODAPÉ DE LOGOS — style.css
+   ---------------------------------------------------------------------
+   Índice
+     1. Tokens de cor (identidade visual + modo escuro)
+     2. Base (reset, tipografia, foco)
+     3. Grade principal e painéis laterais
+     4. Abas do painel lateral
+     5. Biblioteca de logos (pesquisa, filtros, cartões)
+     6. Botões e ícones
+     7. Área de trabalho: templates, cabeçalho, prévia
+     8. Quadro de vídeo 1920 × 1080
+     9. Seções e logos dentro delas (chips)
+    10. Formulários dos Ajustes
+    11. Janela de envio e aviso flutuante
+    12. Responsivo e acessibilidade
+   ===================================================================== */
+
+
+/* =====================================================================
+   1. TOKENS DE COR
+   Todas as cores da interface saem destas variáveis. A identidade:
+     Branco #f3f3f3 · Roxo principal #563f99 · Roxo secundário #b58fff
+     Cinza primário #2a2a2a · Cinza secundário #7f7f7f
+   Observação: o rodapé exportado NÃO usa estas variáveis; as cores
+   dele vêm dos Ajustes (script.js → state.settings).
+   ===================================================================== */
+:root {
+  --bg: #f3f3f3;          /* fundo da página */
+  --surface: #ffffff;     /* painéis e cartões */
+  --surface-2: #faf9fc;   /* campos e áreas internas */
+  --ink: #2a2a2a;         /* texto principal */
+  --muted: #7f7f7f;       /* texto secundário */
+  --line: #e3e0ea;        /* bordas */
+  --brand: #563f99;       /* roxo principal: botões, seleção, ícones */
+  --brand-2: #b58fff;     /* roxo secundário: foco e hover */
+  --brand-soft: #efe9fc;  /* roxo bem claro: área de soltar ativa */
+  --on-brand: #f3f3f3;    /* texto sobre o roxo */
+  --danger: #d93636;      /* vermelho dos botões “×” */
+  --check-a: #e9e7ee;     /* xadrez da transparência (casas escuras) */
+  --check-b: #f7f6fa;     /* xadrez da transparência (casas claras) */
+  color-scheme: light;
+
+  /* Áreas seguras do celular (notch / barra inferior) */
+  box-sizing: border-box;
+  padding-top: env(safe-area-inset-top, 0px);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+/* Modo escuro automático (segue o sistema), a menos que a página
+   force o claro com data-theme="light" */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #1c1b20; --surface: #26252b; --surface-2: #2d2c33;
+    --ink: #f3f3f3; --muted: #a6a3ad; --line: #3b3942;
+    --brand: #b58fff; --brand-soft: #352c4d; --on-brand: #1c1b20; --danger: #ff8a80;
+    --check-a: #2b2a31; --check-b: #34333b;
+    color-scheme: dark;
+  }
+}
+/* Modo escuro forçado manualmente com data-theme="dark" no <html> */
+:root[data-theme="dark"] {
+  --bg: #1c1b20; --surface: #26252b; --surface-2: #2d2c33;
+  --ink: #f3f3f3; --muted: #a6a3ad; --line: #3b3942;
+  --brand: #b58fff; --brand-soft: #352c4d; --on-brand: #1c1b20; --danger: #ff8a80;
+  --check-a: #2b2a31; --check-b: #34333b;
+  color-scheme: dark;
+}
+
+
+/* =====================================================================
+   2. BASE
+   ===================================================================== */
+html { scroll-padding-top: env(safe-area-inset-top, 0px); }
+*, *::before, *::after { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: Montserrat, "Segoe UI", Helvetica, Arial, sans-serif;
+  font-size: 14px;
+  line-height: 1.45;
+}
+
+/* Campos herdam a fonte (por padrão o navegador usa outra) */
+button, input, select { font: inherit; color: inherit; }
+
+/* Contorno de foco visível só para navegação por teclado */
+:focus-visible { outline: 2px solid var(--brand-2); outline-offset: 2px; }
+
+/* Garante que o atributo hidden sempre esconda, mesmo com display:flex */
+[hidden] { display: none !important; }
+
+h1 { font-size: 20px; font-weight: 800; margin: 0; letter-spacing: -.01em; }
+h2 { font-size: 14px; font-weight: 700; margin: 0; }
+p  { margin: 0; }
+.muted { color: var(--muted); }
+.small { font-size: 12px; }
+
+
+/* =====================================================================
+   3. GRADE PRINCIPAL E PAINÉIS
+   Os dois painéis (Biblioteca e Ajustes) ocupam a MESMA célula da
+   grade; o script mostra um e esconde o outro. O painel fica fixo
+   (sticky) e rola sozinho enquanto a área de trabalho rola à parte.
+   ===================================================================== */
+.app {
+  display: grid;
+  grid-template-columns: 320px minmax(0, 1fr);
+  min-height: 100vh;
+}
+.app > aside {
+  grid-column: 1;
+  grid-row: 1;
+  position: sticky;
+  top: env(safe-area-inset-top, 0px);
+  align-self: start;
+  max-height: 100vh;
+  overflow: auto;
+  min-width: 0;
+}
+.app > main { grid-column: 2; grid-row: 1; min-width: 0; }
+
+.panel {
+  background: var(--surface);
+  border-right: 1px solid var(--line);
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+/* Linha separadora entre grupos de ajustes */
+hr.sep { border: 0; border-top: 1px solid var(--line); margin: 4px 0; width: 100%; }
+
+/* Mensagem de status do banco, no fim da biblioteca */
+.status { font-size: 12px; color: var(--muted); }
+
+
+/* =====================================================================
+   4. ABAS DO PAINEL LATERAL (Biblioteca | Ajustes)
+   ===================================================================== */
+.ptabs {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4px;
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 4px;
+}
+.ptabs button {
+  display: flex; align-items: center; justify-content: center; gap: 6px;
+  border: 0;
+  background: transparent;
+  border-radius: 9px;
+  padding: 8px 6px;
+  font-weight: 700;
+  font-size: 13px;
+  cursor: pointer;
+  color: var(--muted);
+}
+.ptabs button[aria-selected="true"] { background: var(--brand); color: var(--on-brand); }
+.ptabs .i { width: 16px; height: 16px; }
+
+
+/* =====================================================================
+   5. BIBLIOTECA DE LOGOS
+   ===================================================================== */
+
+/* Campo de pesquisa */
+.search {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--surface-2);
+}
+
+/* Filtros (Todos, Grupo, Farmacêuticas, Enviados) */
+.tabs { display: flex; flex-wrap: wrap; gap: 6px; }
+.tab {
+  border: 1px solid var(--line);
+  background: transparent;
+  border-radius: 999px;
+  padding: 5px 11px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.tab[aria-pressed="true"] { background: var(--brand); border-color: var(--brand); color: var(--on-brand); }
+
+/* Grade com os cartões de logo */
+.lib { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; padding-right: 2px; }
+
+/* Cartão de logo: sempre branco, como o fundo do rodapé */
+.tile {
+  position: relative;
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  height: 78px;
+  display: flex; align-items: center; justify-content: center;
+  padding: 10px;
+  cursor: grab;        /* indica que dá para arrastar */
+  user-select: none;
+}
+.tile img { max-width: 100%; max-height: 100%; object-fit: contain; pointer-events: none; }
+
+/* Nome do logo: aparece ao passar o mouse */
+.tile .nm {
+  position: absolute; left: 0; right: 0; bottom: -1px;
+  font-size: 10px; color: #7f7f7f; text-align: center;
+  background: #fff;
+  border-radius: 0 0 10px 10px;
+  padding: 1px 4px;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  opacity: 0; transition: opacity .15s;
+}
+.tile:hover .nm, .tile:focus-visible .nm { opacity: 1; }
+
+/* Vaga de farmacêutica ainda sem logo (borda tracejada + “Enviar logo”) */
+.tile.missing {
+  background: var(--surface-2);
+  cursor: pointer;
+  flex-direction: column;
+  gap: 4px;
+  border-style: dashed;
+}
+.tile.missing b { font-size: 12px; font-weight: 700; text-align: center; line-height: 1.2; color: var(--ink); }
+.tile.missing span { font-size: 11px; color: var(--brand); font-weight: 600; }
+
+/* Bloco “+ Novo logo” (primeiro da grade) */
+.tile.add {
+  border: 1.5px dashed var(--brand-2);
+  background: var(--brand-soft);
+  color: var(--brand);
+  flex-direction: column;
+  gap: 2px;
+  cursor: pointer;
+  font-weight: 700;
+  font-size: 12px;
+  text-align: center;
+  line-height: 1.2;
+}
+.tile.add:hover { border-color: var(--brand); }
+.tile.add .plus { font-size: 26px; line-height: 1; font-weight: 500; }
+
+/* Botão “×” de excluir logo enviado (vermelho). Primeiro clique pede
+   confirmação (.confirm → “Excluir?”), segundo clique exclui. */
+.tile .x {
+  position: absolute; top: 3px; right: 3px;
+  width: 22px; height: 22px;
+  border-radius: 6px; border: 0;
+  background: rgba(217, 54, 54, .12);
+  color: #d93636;
+  font-size: 13px; font-weight: 700; line-height: 1;
+  cursor: pointer;
+  display: none;
+}
+.tile:hover .x, .tile .x.confirm { display: block; }
+.tile .x.confirm { width: auto; padding: 0 6px; background: #b3261e; color: #fff; font-size: 11px; }
+
+
+/* =====================================================================
+   6. BOTÕES E ÍCONES
+   ===================================================================== */
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 7px;
+  border: 1px solid var(--line);
+  background: var(--surface);
+  border-radius: 10px;
+  padding: 9px 14px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.btn:hover { border-color: var(--brand-2); }
+.btn.primary { background: var(--brand); border-color: var(--brand); color: var(--on-brand); }
+.btn.primary:hover { filter: brightness(1.08); }
+.btn:disabled { opacity: .5; cursor: default; }
+.btn .i { width: 16px; height: 16px; }
+
+/* Ícones SVG de traço (herdam a cor do texto) */
+.i {
+  width: 18px; height: 18px; flex: none;
+  fill: none; stroke: currentColor; stroke-width: 2;
+  stroke-linecap: round; stroke-linejoin: round;
+}
+/* Títulos com ícone ao lado (ícone em roxo) */
+.hi { display: flex; align-items: center; gap: 8px; }
+.hi .i { color: var(--brand); }
+h1.hi .i { width: 22px; height: 22px; }
+
+/* Botões pequenos só com símbolo (‹ › − + ×) */
+.ico {
+  border: 0; background: transparent;
+  width: 28px; height: 28px; border-radius: 7px;
+  cursor: pointer;
+  color: var(--muted);
+  font-size: 15px; line-height: 1;
+  flex: none;
+}
+.ico:hover { background: var(--surface-2); color: var(--ink); }
+/* Variante vermelha para fechar / remover / excluir */
+.ico.del { color: var(--danger); }
+.ico.del:hover { background: rgba(217, 54, 54, .12); color: var(--danger); }
+
+
+/* =====================================================================
+   7. ÁREA DE TRABALHO
+   ===================================================================== */
+main {
+  padding: 24px clamp(16px, 3vw, 36px) 48px;
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+}
+
+/* --- Templates básicos: barra fixa no topo (sticky) --- */
+.tplbar {
+  position: sticky;
+  top: env(safe-area-inset-top, 0px);
+  z-index: 20;                       /* fica acima da prévia ao rolar */
+  display: flex; align-items: center; flex-wrap: wrap;
+  gap: 10px 14px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 10px 14px;
+  box-shadow: 0 6px 18px rgba(42, 42, 42, .07);
+}
+.tpl-label { font-weight: 700; font-size: 14px; }
+.tpl-btns { display: flex; gap: 8px; flex-wrap: wrap; }
+
+/* Botão de template (formato pílula); em uso = roxo */
+.tpl-btn {
+  border: 1.5px solid var(--line);
+  background: var(--surface-2);
+  border-radius: 999px;
+  padding: 8px 18px;
+  font-weight: 700;
+  font-size: 13px;
+  cursor: pointer;
+}
+.tpl-btn:hover { border-color: var(--brand); }
+.tpl-btn[aria-pressed="true"] { background: var(--brand); border-color: var(--brand); color: var(--on-brand); }
+
+/* Faixa na área do notch do celular, para o conteúdo não aparecer por trás */
+body::before {
+  content: "";
+  position: fixed; inset: 0 0 auto;
+  height: env(safe-area-inset-top, 0px);
+  z-index: 10;
+  background: var(--bg);
+}
+
+/* --- Cabeçalho: título, dimensões e botões de download --- */
+.top { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 12px; }
+.top p { margin-top: 4px; }
+.top .actions { display: flex; gap: 8px; flex-wrap: wrap; }
+.dims { font-variant-numeric: tabular-nums; font-weight: 700; color: var(--brand); }
+
+/* --- Palco da prévia: fundo xadrez = áreas transparentes do PNG --- */
+.stage {
+  border-radius: 16px;
+  padding: clamp(16px, 3vw, 40px);
+  background-color: var(--check-b);
+  background-image:
+    linear-gradient(45deg, var(--check-a) 25%, transparent 25%),
+    linear-gradient(-45deg, var(--check-a) 25%, transparent 25%),
+    linear-gradient(45deg, transparent 75%, var(--check-a) 75%),
+    linear-gradient(-45deg, transparent 75%, var(--check-a) 75%);
+  background-size: 20px 20px;
+  background-position: 0 0, 0 10px, 10px -10px, -10px 0;
+  overflow-x: auto;
+  display: flex; justify-content: center; align-items: center;
+  min-height: 180px;
+}
+.stage canvas { display: block; max-width: 100%; height: auto; }
+.empty-msg { color: var(--muted); text-align: center; max-width: 38ch; }
+
+
+/* =====================================================================
+   8. QUADRO DE VÍDEO 1920 × 1080
+   Miniatura à esquerda, controles à direita.
+   ===================================================================== */
+.vid {
+  display: grid;
+  grid-template-columns: minmax(0, 360px) minmax(0, 1fr);
+  gap: 22px;
+  align-items: center;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 16px;
+}
+/* Miniatura com o mesmo xadrez (casas menores) */
+.vid canvas {
+  display: block; width: 100%; height: auto;
+  border-radius: 8px;
+  border: 1px solid var(--line);
+  background-color: var(--check-b);
+  background-image:
+    linear-gradient(45deg, var(--check-a) 25%, transparent 25%),
+    linear-gradient(-45deg, var(--check-a) 25%, transparent 25%),
+    linear-gradient(45deg, transparent 75%, var(--check-a) 75%),
+    linear-gradient(-45deg, transparent 75%, var(--check-a) 75%);
+  background-size: 12px 12px;
+  background-position: 0 0, 0 6px, 6px -6px, -6px 0;
+}
+.vid-ctl { display: flex; flex-direction: column; gap: 12px; align-items: flex-start; }
+.vid-ctl .field { width: 100%; max-width: 360px; }
+
+
+/* =====================================================================
+   9. SEÇÕES E CHIPS
+   ===================================================================== */
+.secs-head { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; }
+.secs { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 14px; }
+
+/* Cartão de seção; .active = seção que recebe o logo ao clicar na biblioteca */
+.sec {
+  background: var(--surface);
+  border: 1.5px solid var(--line);
+  border-radius: 14px;
+  padding: 12px;
+  display: flex; flex-direction: column; gap: 10px;
+}
+.sec.active { border-color: var(--brand); }
+
+/* Linha de cima: título editável + mover (‹ ›) + excluir (×) */
+.sec-top { display: flex; gap: 6px; align-items: center; }
+.sec-title {
+  flex: 1; min-width: 0;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  padding: 6px 8px;
+  font-weight: 700;
+  background: var(--surface-2);
+}
+.sec-title:hover { border-color: var(--line); }
+
+/* Área de soltar; .over = algo está sendo arrastado por cima */
+.zone {
+  min-height: 92px;
+  border: 1.5px dashed var(--line);
+  border-radius: 10px;
+  padding: 8px;
+  display: flex; flex-direction: column; gap: 6px;
+  transition: background .12s, border-color .12s;
+}
+.zone.over { background: var(--brand-soft); border-color: var(--brand); }
+.zone .hint { margin: auto; font-size: 12px; color: var(--muted); text-align: center; padding: 10px; }
+
+/* Chip = um logo dentro da seção (miniatura, − tamanho +, ×) */
+.chip {
+  display: flex; align-items: center; gap: 8px;
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  padding: 5px 6px;
+  cursor: grab;
+}
+.chip.dragging { opacity: .4; }
+/* Indicador de onde o logo arrastado vai entrar (antes deste chip) */
+.chip.drop-before { box-shadow: 0 -3px 0 var(--brand); }
+.chip .th {
+  flex: 1; min-width: 56px; height: 30px;
+  background: #fff;
+  border-radius: 6px;
+  display: flex; align-items: center; justify-content: center;
+  padding: 3px;
+}
+.chip .th img { max-width: 100%; max-height: 100%; object-fit: contain; }
+.chip .sc { font-size: 11px; color: var(--muted); font-variant-numeric: tabular-nums; width: 34px; text-align: center; }
+.chip .ico { width: 24px; height: 24px; font-size: 14px; }
+
+
+/* =====================================================================
+   10. FORMULÁRIOS (Ajustes)
+   ===================================================================== */
+.field { display: flex; flex-direction: column; gap: 6px; }
+.field label, .lbl { font-size: 12px; font-weight: 600; display: flex; justify-content: space-between; gap: 8px; }
+.field output { color: var(--muted); font-variant-numeric: tabular-nums; font-weight: 500; }
+
+input[type=range] { width: 100%; accent-color: var(--brand); }
+select, .txt {
+  width: 100%;
+  padding: 8px 10px;
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  background: var(--surface-2);
+}
+.row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+
+/* Seletor de cor + bolinhas com as cores da identidade */
+.colorrow { display: flex; gap: 8px; align-items: center; }
+input[type=color] {
+  width: 38px; height: 32px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 2px;
+  background: var(--surface-2);
+  flex: none;
+}
+.swatches { display: flex; gap: 4px; flex-wrap: wrap; }
+.sw { width: 20px; height: 20px; border-radius: 50%; border: 1px solid var(--line); cursor: pointer; padding: 0; }
+
+/* Caixas de seleção */
+.check { display: flex; gap: 8px; align-items: center; font-size: 13px; font-weight: 500; cursor: pointer; }
+.check input { accent-color: var(--brand); width: 16px; height: 16px; }
+
+
+/* =====================================================================
+   11. JANELA DE ENVIO E AVISO FLUTUANTE
+   ===================================================================== */
+dialog {
+  border: 0;
+  border-radius: 16px;
+  padding: 22px;
+  width: min(440px, 92vw);
+  background: var(--surface);
+  color: var(--ink);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, .25);
+}
+dialog::backdrop { background: rgba(28, 27, 32, .45); }
+.dlg { display: flex; flex-direction: column; gap: 14px; }
+.dlg-title { flex: 1; }
+.dlg-actions { display: flex; justify-content: flex-end; gap: 8px; flex-wrap: wrap; }
+
+/* Área para soltar o arquivo */
+.drop-file {
+  border: 1.5px dashed var(--line);
+  border-radius: 12px;
+  padding: 18px;
+  text-align: center;
+  cursor: pointer;
+  background: var(--surface-2);
+}
+.drop-file.over { border-color: var(--brand); background: var(--brand-soft); }
+
+/* Prévia do logo tratado (fundo branco, como no rodapé) */
+.prev {
+  height: 110px;
+  border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+  background: #fff;
+  border: 1px solid var(--line);
+  padding: 12px;
+}
+.prev img { max-width: 100%; max-height: 100%; object-fit: contain; }
+.note { font-size: 12px; color: var(--muted); }
+
+/* Aviso flutuante (aparece com a classe .on) */
+.toast {
+  position: fixed;
+  left: 50%;
+  bottom: calc(20px + env(safe-area-inset-bottom, 0px));
+  transform: translateX(-50%);
+  background: var(--ink);
+  color: var(--bg);
+  padding: 10px 16px;
+  border-radius: 10px;
+  font-weight: 600;
+  font-size: 13px;
+  max-width: min(92vw, 520px);
+  z-index: 50;
+  display: none;
+}
+.toast.on { display: block; }
+
+
+/* =====================================================================
+   12. RESPONSIVO E ACESSIBILIDADE
+   ===================================================================== */
+
+/* Telas médias: painel lateral mais estreito */
+@media (max-width: 1000px) {
+  .app { grid-template-columns: 280px minmax(0, 1fr); }
+}
+
+/* Celular: uma coluna; área de trabalho em cima, painel embaixo */
+@media (max-width: 760px) {
+  .app { grid-template-columns: 1fr; }
+  .app > main { grid-column: 1; grid-row: 1; }
+  .app > aside { grid-column: 1; grid-row: 2; position: static; max-height: none; }
+  .panel { border-right: 0; border-top: 1px solid var(--line); }
+  .vid { grid-template-columns: 1fr; }
+  .lib { max-height: 340px; overflow: auto; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); }
+}
+
+/* Quem pede menos movimento no sistema não vê transições */
+@media (prefers-reduced-motion: reduce) {
+  * { transition: none !important; }
+}
