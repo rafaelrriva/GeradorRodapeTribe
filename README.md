@@ -12,39 +12,3 @@ logos/logos.json            lista de logos e templates (editar aqui)
 logos/grupo/                PNGs dos logos do grupo
 logos/farmaceuticas/        PNGs dos logos das farmacêuticas
 ```
-
-## Publicar no GitHub Pages
-
-1. Envie todos os arquivos para a raiz de um repositório público.
-2. Em **Settings → Pages → Build and deployment**, escolha **Deploy from a branch**, branch `main`, pasta `/ (root)` e clique em **Save**.
-3. Em 1–2 minutos o site fica em `https://SEU-USUARIO.github.io/NOME-DO-REPOSITORIO/`.
-
-## Adicionar um logo
-
-1. Coloque o PNG (fundo transparente, nome sem acentos e sem espaços) em `logos/farmaceuticas/` ou `logos/grupo/`.
-2. Em `logos/logos.json`, inclua uma linha na lista certa:
-
-```json
-{"nome": "Novo Laboratório", "arquivo": "novo-laboratorio.png"},
-```
-
-Cada item é separado por vírgula; o último item da lista não leva vírgula.
-Para uma vaga sem logo ainda, use `"arquivo": ""`.
-
-## Templates
-
-No bloco `"templates"` do `logos.json`, cada template lista os logos da seção Realização pelo nome:
-
-```json
-{"nome": "Hemomeeting", "realizacao": ["Hemomeeting", "TribeMD"]}
-```
-
-## Testar no computador
-
-O site precisa ser aberto por um endereço `http` (não com duplo clique). Na pasta do projeto:
-
-```
-python -m http.server
-```
-
-e abra `http://localhost:8000`.
