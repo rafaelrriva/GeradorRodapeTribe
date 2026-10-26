@@ -21,7 +21,8 @@
     12. Envio de logo (tratamento da imagem, salvar e baixar)
     13. Abas do painel lateral
     14. Templates básicos
-    15. Inicialização
+    15. Área do administrador (publicação via GitHub)
+    16. Inicialização
    ===================================================================== */
 
 
@@ -168,7 +169,9 @@ function renderLib() {
     const plus = document.createElement("span");
     plus.className = "plus"; plus.textContent = "+";
     const label = document.createElement("span");
-    label.textContent = filter === "grupo" ? "Novo logo do grupo" : filter === "farma" ? "Nova farmacêutica" : "Novo logo";
+    label.textContent = admin.on
+      ? (filter === "grupo" ? "Publicar logo do grupo" : filter === "farma" ? "Publicar farmacêutica" : "Publicar novo logo")
+      : (filter === "grupo" ? "Novo logo do grupo" : filter === "farma" ? "Nova farmacêutica" : "Novo logo");
     add.append(plus, label);
     // O texto da pesquisa vira sugestão de nome
     add.addEventListener("click", () => openUpload({ group: filter === "grupo" ? "grupo" : "farma", name: $("q").value.trim() }));
@@ -238,10 +241,34 @@ function renderLib() {
         });
         tile.append(x);
       }
+
+      // Modo administrador: trocar ou remover o logo PARA TODOS (via GitHub).
+      // “Remover” também pede confirmação com um segundo clique.
+      if (admin.on && l.builtin) {
+        tile.classList.add("has-adm");
+        const bar = document.createElement("div");
+        bar.className = "adm";
+        const tr = document.createElement("button");
+        tr.type = "button"; tr.textContent = "Trocar";
+        tr.addEventListener("click", e => { e.stopPropagation(); openUpload({ replace: l, name: l.name, group: l.group }); });
+        const rm = document.createElement("button");
+        rm.type = "button"; rm.className = "rm"; rm.textContent = "Remover";
+        rm.addEventListener("click", e => {
+          e.stopPropagation();
+          if (!rm.classList.contains("confirm")) {
+            rm.classList.add("confirm"); rm.textContent = "Confirmar?";
+            setTimeout(() => { rm.classList.remove("confirm"); rm.textContent = "Remover"; }, 2600);
+            return;
+          }
+          adminRemove(l);
+        });
+        bar.append(tr, rm);
+        tile.append(bar);
+      }
     } else {
       // Vaga de farmacêutica sem logo: clique abre o envio já com o nome
       const b = document.createElement("b"); b.textContent = l.name;
-      const s = document.createElement("span"); s.textContent = "Enviar logo";
+      const s = document.createElement("span"); s.textContent = admin.on ? "Publicar logo" : "Enviar logo";
       tile.append(b, s);
       const open = () => openUpload({ slot: l.id, name: l.name });
       tile.addEventListener("click", open);
@@ -1035,7 +1062,32 @@ $("psdBtn").addEventListener("click", async () => {
 const LOCAL_KEY = "rodape-logos-locais-v1";
 const canWrite = true;   // no site estático qualquer pessoa pode enviar logos locais
 
-/* Lê o logos.json e monta as listas de logos e templates */
+/* Arquivos publicados pelo administrador nesta sessão: enquanto o
+   GitHub Pages não republica (1–2 min), a imagem vem daqui. */
+const pendingSrc = {};
+
+/* Monta as listas de logos e templates a partir do conteúdo do logos.json */
+function applyManifest(m) {
+  const gid = n => "g_" + slug(n).replace(/-/g, "");
+  const fid = n => "f_" + slug(n);
+  const file = (folder, a) => pendingSrc[folder + "/" + a] || ("logos/" + folder + "/" + encodeURIComponent(a));
+
+  GROUP_LOGOS = (m.grupo || [])
+    .filter(x => x && x.nome && x.arquivo)
+    .map(x => ({ id: gid(x.nome), name: x.nome, src: file("grupo", x.arquivo) }));
+
+  PHARMA_LOGOS = (m.farmaceuticas || [])
+    .filter(x => x && x.nome)
+    .map(x => ({ id: fid(x.nome), name: x.nome, src: x.arquivo ? file("farmaceuticas", x.arquivo) : null }));
+
+  // Templates referenciam os logos pelo NOME (sem diferenciar acento/maiúscula)
+  const byName = new Map([...GROUP_LOGOS, ...PHARMA_LOGOS].map(l => [slug(l.name), l.id]));
+  TEMPLATES = (m.templates || [])
+    .map(t => ({ name: t.nome, logos: (t.realizacao || []).map(n => byName.get(slug(n))).filter(Boolean) }))
+    .filter(t => t.name && t.logos.length);
+}
+
+/* Lê o logos.json publicado no site */
 async function loadManifest() {
   if (location.protocol === "file:") {
     $("status").textContent = "Abra o site por um endereço http (GitHub Pages ou servidor local). Aberto como arquivo, os logos não carregam.";
@@ -1046,24 +1098,7 @@ async function loadManifest() {
     const res = await fetch(MANIFEST_URL, { cache: "no-cache" });
     if (!res.ok) throw new Error("HTTP " + res.status);
     const m = await res.json();
-
-    const gid = n => "g_" + slug(n).replace(/-/g, "");
-    const fid = n => "f_" + slug(n);
-    const file = (folder, a) => "logos/" + folder + "/" + encodeURIComponent(a);
-
-    GROUP_LOGOS = (m.grupo || [])
-      .filter(x => x && x.nome && x.arquivo)
-      .map(x => ({ id: gid(x.nome), name: x.nome, src: file("grupo", x.arquivo) }));
-
-    PHARMA_LOGOS = (m.farmaceuticas || [])
-      .filter(x => x && x.nome)
-      .map(x => ({ id: fid(x.nome), name: x.nome, src: x.arquivo ? file("farmaceuticas", x.arquivo) : null }));
-
-    // Templates referenciam os logos pelo NOME (sem diferenciar acento/maiúscula)
-    const byName = new Map([...GROUP_LOGOS, ...PHARMA_LOGOS].map(l => [slug(l.name), l.id]));
-    TEMPLATES = (m.templates || [])
-      .map(t => ({ name: t.nome, logos: (t.realizacao || []).map(n => byName.get(slug(n))).filter(Boolean) }))
-      .filter(t => t.name && t.logos.length);
+    applyManifest(m);
 
     $("status").textContent = "Logos enviados por aqui ficam salvos só neste navegador. Para liberar para todos, o administrador adiciona no GitHub.";
   } catch (e) {
@@ -1114,7 +1149,15 @@ function openUpload(opts = {}) {
   $("upPrev").hidden = true;
   $("upSave").disabled = $("upDownload").disabled = true;
   $("upNote").textContent = "";
-  $("dlgTitle").textContent = opts.slot ? ("Enviar logo – " + opts.name) : "Enviar logo";
+  $("dlgTitle").textContent = opts.replace ? ("Trocar logo – " + opts.replace.name)
+    : opts.slot ? ((admin.on ? "Publicar logo – " : "Enviar logo – ") + opts.name)
+    : (admin.on ? "Publicar logo" : "Enviar logo");
+  // No modo administrador o botão publica no GitHub em vez de salvar localmente
+  $("upGroupField").hidden = !!(opts.slot || opts.replace);
+  $("upSave").textContent = admin.on ? "Publicar para todos" : "Salvar logo";
+  $("upLocalNote").textContent = admin.on
+    ? "Modo administrador: o logo será publicado no GitHub e aparece para todos em 1 a 2 minutos."
+    : "O logo fica salvo só neste navegador. Para disponibilizar para todos, entre na Área do administrador.";
   $("upFile").value = "";
   if (dlg.showModal) dlg.showModal(); else dlg.setAttribute("open", "");
 }
@@ -1243,6 +1286,7 @@ $("upSave").addEventListener("click", async () => {
   const name = $("upName").value.trim();
   if (!name) { $("upNote").textContent = "Dê um nome ao logo para encontrá-lo depois."; $("upName").focus(); return; }
   if (!upBlob) return;
+  if (admin.on) { adminSaveFromDialog(); return; }   // publica para todos (seção 15)
 
   const btn = $("upSave");
   btn.disabled = true; btn.textContent = "Salvando…";
@@ -1348,10 +1392,273 @@ function markTemplate() {
 
 
 /* =====================================================================
-   15. INICIALIZAÇÃO
+   15. ÁREA DO ADMINISTRADOR (publicação via GitHub)
+   ---------------------------------------------------------------------
+   O repositório do GitHub é o “banco de logos”. Quem tem uma chave
+   (token) com permissão de escrita no repositório pode, pelo próprio
+   site, publicar, trocar e remover logos para todos.
+
+   Como funciona cada publicação:
+     1. lê o logos.json atual direto do repositório (versão mais nova)
+     2. aplica a mudança (incluir, trocar ou remover a linha do logo)
+     3. cria UM commit com o PNG + o logos.json atualizado
+     4. o GitHub Pages republica o site em 1–2 minutos
+
+   A chave fica só no navegador do administrador (localStorage, ou
+   sessionStorage se “Lembrar neste navegador” estiver desmarcado).
+   Nunca coloque a chave dentro dos arquivos do site.
+   ===================================================================== */
+const ADMIN_KEY = "rodape-admin-v1";
+const MANIFEST_PATH = "logos/logos.json";
+const admin = { on: false, repo: "", branch: "main", token: "", login: "" };
+
+/* No GitHub Pages, descobre “usuario/repositorio” pelo endereço do site */
+function guessRepo() {
+  const h = location.hostname;
+  if (!h.endsWith(".github.io")) return "";
+  const owner = h.split(".")[0];
+  const first = location.pathname.split("/").filter(Boolean)[0];
+  return owner + "/" + (first || h);
+}
+
+function loadAdmin() {
+  let raw = null;
+  try { raw = localStorage.getItem(ADMIN_KEY) || sessionStorage.getItem(ADMIN_KEY); } catch (e) {}
+  if (raw) { try { Object.assign(admin, JSON.parse(raw)); } catch (e) {} }
+  admin.on = false;   // só liga depois de verificar a chave
+}
+function storeAdmin(remember) {
+  const data = JSON.stringify({ repo: admin.repo, branch: admin.branch, token: admin.token, login: admin.login });
+  try {
+    localStorage.removeItem(ADMIN_KEY); sessionStorage.removeItem(ADMIN_KEY);
+    (remember ? localStorage : sessionStorage).setItem(ADMIN_KEY, data);
+  } catch (e) {}
+}
+function forgetAdmin() {
+  try { localStorage.removeItem(ADMIN_KEY); sessionStorage.removeItem(ADMIN_KEY); } catch (e) {}
+  Object.assign(admin, { on: false, token: "", login: "" });
+}
+
+/* Chamada à API do GitHub com a chave do administrador */
+async function gh(path, opts = {}) {
+  const headers = {
+    "Accept": "application/vnd.github+json",
+    "Authorization": "Bearer " + admin.token,
+    "X-GitHub-Api-Version": "2022-11-28"
+  };
+  if (opts.body) headers["Content-Type"] = "application/json";
+  const res = await fetch("https://api.github.com" + path, { ...opts, headers, cache: "no-store" });
+  if (!res.ok) {
+    const err = new Error("GitHub " + res.status);
+    err.status = res.status;
+    try { err.body = await res.json(); } catch (e) {}
+    throw err;
+  }
+  return res.status === 204 ? null : res.json();
+}
+
+/* Mensagem amigável para cada tipo de erro */
+function ghError(e) {
+  if (e && e.msg) return e.msg;
+  if (!e || !e.status) return "Sem conexão com o GitHub. Verifique a internet e tente de novo.";
+  if (e.status === 401) return "Chave inválida ou expirada. Gere uma nova chave no GitHub.";
+  if (e.status === 403 || e.status === 404) return "A chave não tem acesso de escrita a este repositório. Confira o nome do repositório e a permissão “Contents: Read and write”.";
+  return "O GitHub recusou a operação (erro " + e.status + "). Tente de novo em instantes.";
+}
+
+/* Confere a chave e liga o modo administrador */
+async function verifyAdmin() {
+  const r = await gh("/repos/" + admin.repo);
+  if (!r.permissions || !r.permissions.push) throw { msg: "Sua conta não tem permissão de escrita neste repositório." };
+  try { const u = await gh("/user"); admin.login = u.login || ""; } catch (e) {}
+  admin.on = true;
+  refreshAdminUI();
+  renderLib();
+}
+
+/* Lê o logos.json direto do repositório (sem esperar o Pages) */
+async function readRepoManifest() {
+  const d = await gh("/repos/" + admin.repo + "/contents/" + MANIFEST_PATH + "?ref=" + encodeURIComponent(admin.branch));
+  const bin = atob(d.content.replace(/\s/g, ""));
+  const bytes = Uint8Array.from(bin, c => c.charCodeAt(0));
+  return JSON.parse(new TextDecoder().decode(bytes));
+}
+
+/* Escreve o logos.json no mesmo formato legível: um item por linha */
+function serializeManifest(m) {
+  const item = x => "{" + Object.entries(x).map(([k, v]) =>
+    JSON.stringify(k) + ": " + (Array.isArray(v) ? "[" + v.map(s => JSON.stringify(s)).join(", ") + "]" : JSON.stringify(v))
+  ).join(", ") + "}";
+  const keys = ["grupo", "farmaceuticas", "templates", ...Object.keys(m).filter(k => !["grupo", "farmaceuticas", "templates"].includes(k))];
+  const parts = keys.map(k => Array.isArray(m[k])
+    ? "  " + JSON.stringify(k) + ": [\n" + m[k].map(x => "    " + item(x)).join(",\n") + "\n  ]"
+    : "  " + JSON.stringify(k) + ": " + JSON.stringify(m[k]));
+  return "{\n" + parts.join(",\n\n") + "\n}\n";
+}
+
+/* Cria UM commit com vários arquivos (Git Data API).
+   files: [{ path, base64 } | { path, text } | { path, delete: true }] */
+async function commitFiles(message, files) {
+  const R = "/repos/" + admin.repo + "/git";
+  const ref = await gh(R + "/ref/heads/" + encodeURIComponent(admin.branch));
+  const baseSha = ref.object.sha;
+  const base = await gh(R + "/commits/" + baseSha);
+  const tree = [];
+  for (const f of files) {
+    if (f.delete) { tree.push({ path: f.path, mode: "100644", type: "blob", sha: null }); continue; }
+    const blob = await gh(R + "/blobs", { method: "POST", body: JSON.stringify(
+      f.base64 ? { content: f.base64, encoding: "base64" } : { content: f.text, encoding: "utf-8" }) });
+    tree.push({ path: f.path, mode: "100644", type: "blob", sha: blob.sha });
+  }
+  const newTree = await gh(R + "/trees", { method: "POST", body: JSON.stringify({ base_tree: base.tree.sha, tree }) });
+  const commit = await gh(R + "/commits", { method: "POST", body: JSON.stringify({ message, tree: newTree.sha, parents: [baseSha] }) });
+  await gh(R + "/refs/heads/" + encodeURIComponent(admin.branch), { method: "PATCH", body: JSON.stringify({ sha: commit.sha }) });
+}
+
+/* Publica uma mudança. build(m) altera o manifesto m e devolve os
+   arquivos extras do commit. Se outra pessoa publicou ao mesmo tempo
+   (409/422), lê de novo e tenta outra vez; na última tentativa ignora
+   apagar arquivos antigos (caso já tenham sido apagados à mão). */
+async function publish(message, build) {
+  for (let attempt = 0; attempt < 3; attempt++) {
+    const m = await readRepoManifest();
+    const plan = build(m);
+    const files = plan.files.filter(f => !(attempt === 2 && f.delete));
+    try {
+      await commitFiles(message, [...files, { path: MANIFEST_PATH, text: serializeManifest(m) }]);
+      applyManifest(m);
+      rebuildLib(); renderTemplates(); renderLib(); renderSecs(); scheduleRender();
+      return;
+    } catch (e) {
+      if ((e.status === 409 || e.status === 422) && attempt < 2) continue;
+      throw e;
+    }
+  }
+}
+
+/* Nome do arquivo: nome-do-logo.png. Na troca, ganha data e hora no
+   nome para que nenhum navegador continue mostrando a imagem antiga. */
+function pickFilename(name, list, replacing) {
+  const base = slug(name) || "logo";
+  const used = new Set(list.map(x => x.arquivo));
+  let fn = base + ".png";
+  if (replacing || used.has(fn)) fn = base + "-" + stamp() + ".png";
+  for (let i = 2; used.has(fn); i++) fn = base + "-" + stamp() + "-" + i + ".png";
+  return fn;
+}
+
+/* Publicar a partir da janela de envio (novo logo, vaga ou troca) */
+async function adminSaveFromDialog() {
+  const name = $("upName").value.trim();
+  const rep = upCtx.replace;
+  const group = rep ? rep.group : upCtx.slot ? "farma" : $("upGroup").value;
+  const folder = group === "grupo" ? "grupo" : "farmaceuticas";
+  const btn = $("upSave");
+  btn.disabled = true; btn.textContent = "Publicando…";
+  try {
+    const b64 = (await blobToDataUrl(upBlob)).split(",")[1];
+    await publish((rep ? "Troca de logo: " : "Novo logo: ") + name, m => {
+      const list = m[folder] = m[folder] || [];
+      const oldName = rep ? rep.name : upCtx.slot ? upCtx.name : name;
+      const entry = list.find(x => slug(x.nome || "") === slug(oldName));
+      if (!rep && !upCtx.slot && entry && entry.arquivo) throw { msg: "Já existe um logo com esse nome. Use “Trocar” no logo existente." };
+      const files = [];
+      const fn = pickFilename(name, list, !!(entry && entry.arquivo));
+      if (entry && entry.arquivo) files.push({ path: "logos/" + folder + "/" + entry.arquivo, delete: true });
+      files.push({ path: "logos/" + folder + "/" + fn, base64: b64 });
+      if (entry) {
+        // Nome mudou na troca: atualiza também os templates que usam o logo
+        if (slug(entry.nome) !== slug(name)) {
+          (m.templates || []).forEach(t => t.realizacao = (t.realizacao || []).map(n => slug(n) === slug(entry.nome) ? name : n));
+        }
+        entry.nome = name; entry.arquivo = fn;
+      } else {
+        list.push({ nome: name, arquivo: fn });
+      }
+      pendingSrc[folder + "/" + fn] = "data:image/png;base64," + b64;
+      return { files };
+    });
+    // Um logo local com o mesmo id deixaria de mostrar o publicado
+    if (upCtx.slot) { localLogos = localLogos.filter(d => d.id !== upCtx.slot); saveLocalLogos(); rebuildLib(); renderLib(); }
+    closeUpload();
+    toast("“" + name + "” publicado. Aparece para todos em 1 a 2 minutos.", 5000);
+  } catch (e) {
+    console.error(e);
+    $("upNote").textContent = ghError(e);
+  } finally {
+    btn.disabled = false; btn.textContent = "Publicar para todos";
+  }
+}
+
+/* Remover um logo para todos */
+async function adminRemove(l) {
+  const folder = l.group === "grupo" ? "grupo" : "farmaceuticas";
+  toast("Removendo “" + l.name + "”…", 10000);
+  try {
+    await publish("Remoção de logo: " + l.name, m => {
+      const list = m[folder] || [];
+      const i = list.findIndex(x => slug(x.nome || "") === slug(l.name));
+      if (i < 0) return { files: [] };
+      const old = list.splice(i, 1)[0];
+      return { files: old.arquivo ? [{ path: "logos/" + folder + "/" + old.arquivo, delete: true }] : [] };
+    });
+    toast("“" + l.name + "” removido. Some para todos em 1 a 2 minutos.", 5000);
+  } catch (e) {
+    console.error(e);
+    toast(ghError(e), 7000);
+  }
+}
+
+/* Interface: faixa “Modo administrador”, botão de acesso e janela */
+function refreshAdminUI() {
+  $("adminBar").hidden = !admin.on;
+  $("adminBtn").hidden = admin.on;
+  if (admin.on) $("adminWho").textContent = (admin.login ? "@" + admin.login + " · " : "") + admin.repo;
+}
+const admDlg = $("admDlg");
+const closeAdm = () => { if (admDlg.close) admDlg.close(); else admDlg.removeAttribute("open"); };
+$("adminBtn").addEventListener("click", () => {
+  $("admRepo").value = admin.repo || guessRepo();
+  $("admBranch").value = admin.branch || "main";
+  $("admToken").value = admin.token || "";
+  $("admNote").textContent = "";
+  if (admDlg.showModal) admDlg.showModal(); else admDlg.setAttribute("open", "");
+});
+$("admCancel").addEventListener("click", closeAdm);
+$("admX").addEventListener("click", closeAdm);
+$("admConnect").addEventListener("click", async () => {
+  admin.repo = $("admRepo").value.trim().replace(/^https?:\/\/github\.com\//, "").replace(/\.git$/, "").replace(/\/+$/, "");
+  admin.branch = $("admBranch").value.trim() || "main";
+  admin.token = $("admToken").value.trim();
+  if (!/^[^/\s]+\/[^/\s]+$/.test(admin.repo)) { $("admNote").textContent = "Informe o repositório no formato usuario/repositorio."; return; }
+  if (!admin.token) { $("admNote").textContent = "Cole a chave (token) do GitHub."; return; }
+  const btn = $("admConnect");
+  btn.disabled = true; btn.textContent = "Conectando…";
+  try {
+    await verifyAdmin();
+    storeAdmin($("admRemember").checked);
+    closeAdm();
+    toast("Modo administrador ativado.", 3000);
+  } catch (e) {
+    admin.on = false; refreshAdminUI();
+    $("admNote").textContent = ghError(e);
+  } finally {
+    btn.disabled = false; btn.textContent = "Conectar";
+  }
+});
+$("adminOut").addEventListener("click", () => {
+  forgetAdmin(); refreshAdminUI(); renderLib();
+  toast("Você saiu do modo administrador e a chave foi apagada deste navegador.", 4000);
+});
+
+
+/* =====================================================================
+   16. INICIALIZAÇÃO
    Ajustes e seções aparecem na hora; a biblioteca e os templates
    aparecem assim que o logos.json termina de carregar.
    ===================================================================== */
+loadAdmin();
+refreshAdminUI();
 syncSettingsUI();
 loadLocalLogos();
 rebuildLib();
@@ -1365,4 +1672,6 @@ loadManifest().then(() => {
   renderLib();
   renderSecs();
   scheduleRender();
+  // Chave salva? Confere em silêncio e reativa o modo administrador
+  if (admin.token && admin.repo) verifyAdmin().catch(() => { admin.on = false; refreshAdminUI(); });
 });

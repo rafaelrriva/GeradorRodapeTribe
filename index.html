@@ -13,6 +13,9 @@
     logos/grupo/          → PNGs dos logos do grupo
     logos/farmaceuticas/  → PNGs dos logos das farmacêuticas
 
+  O administrador publica logos pelo próprio site (Área do
+  administrador), com uma chave do GitHub. Veja o tutorial em PDF.
+
   Para testar no computador, use um servidor local (ex.: na pasta,
   `python -m http.server` e abra http://localhost:8000). Aberto com
   duplo clique (file://), o navegador bloqueia a leitura dos logos.
@@ -65,6 +68,12 @@
 
     <p class="small muted">Arraste para uma seção ou clique para adicionar à seção selecionada.</p>
 
+    <!-- Faixa visível só no modo administrador (ver script.js, seção 15) -->
+    <div class="adminbar" id="adminBar" hidden>
+      <span><b>Modo administrador</b><br><span id="adminWho"></span></span>
+      <button class="btn" id="adminOut" type="button">Sair</button>
+    </div>
+
     <!-- Campo de pesquisa: filtra a biblioteca pelo nome (ignora acentos) -->
     <input class="search" id="q" type="search" placeholder="Pesquisar logo…" autocomplete="off">
 
@@ -82,6 +91,11 @@
 
     <!-- Mensagem sobre o carregamento do logos.json e logos locais -->
     <p class="status" id="status">Carregando logos…</p>
+
+    <!-- Acesso do administrador: publicar, trocar e remover logos para todos -->
+    <button class="linkbtn" id="adminBtn" type="button">
+      <svg class="i" viewBox="0 0 24 24"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>Área do administrador
+    </button>
   </aside>
 
 
@@ -286,13 +300,37 @@
     <p class="note" id="upNote"></p>
 
     <!-- Aviso: logos enviados pelo site ficam só neste navegador -->
-    <p class="note">O logo fica salvo só neste navegador. Para disponibilizar para todos, use “Baixar PNG tratado” e adicione o arquivo no GitHub (veja o tutorial).</p>
+    <p class="note" id="upLocalNote">O logo fica salvo só neste navegador. Para disponibilizar para todos, entre na Área do administrador.</p>
 
     <div class="dlg-actions">
       <!-- Para o administrador: baixa o PNG limpo, pronto para o repositório -->
       <button class="btn" id="upDownload" type="button" disabled style="margin-right:auto">Baixar PNG tratado</button>
       <button class="btn" id="upCancel" type="button">Cancelar</button>
       <button class="btn primary" id="upSave" type="button" disabled>Salvar logo</button>
+    </div>
+  </div>
+</dialog>
+
+<!-- =====================================================================
+     JANELA DA ÁREA DO ADMINISTRADOR
+     Conecta o site ao repositório com uma chave (token) do GitHub.
+     A chave fica guardada só neste navegador.
+     ===================================================================== -->
+<dialog id="admDlg">
+  <div class="dlg">
+    <div class="sec-top">
+      <h2 class="dlg-title">Área do administrador</h2>
+      <button class="ico del" id="admX" type="button" aria-label="Fechar">×</button>
+    </div>
+    <p class="note">Conecte com a sua chave do GitHub. Com ela, os logos que você publicar, trocar ou remover valem para todos que usam o gerador.</p>
+    <div class="field"><label for="admRepo">Repositório</label><input class="txt" id="admRepo" placeholder="usuario/gerador-rodape" autocomplete="off" spellcheck="false"></div>
+    <div class="field"><label for="admBranch">Branch</label><input class="txt" id="admBranch" placeholder="main" autocomplete="off" spellcheck="false"></div>
+    <div class="field"><label for="admToken">Chave do GitHub (token)</label><input class="txt" id="admToken" type="password" placeholder="github_pat_…" autocomplete="off" spellcheck="false"></div>
+    <label class="check"><input type="checkbox" id="admRemember" checked> Lembrar neste navegador</label>
+    <p class="note" id="admNote" role="alert"></p>
+    <div class="dlg-actions">
+      <button class="btn" id="admCancel" type="button">Cancelar</button>
+      <button class="btn primary" id="admConnect" type="button">Conectar</button>
     </div>
   </div>
 </dialog>
