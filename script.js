@@ -321,6 +321,7 @@ let state;
 try { state = JSON.parse(localStorage.getItem(STORAGE_KEY) || "null"); } catch (e) { state = null; }
 if (!state || !Array.isArray(state.sections)) state = freshState();
 state.settings = { ...DEFAULTS, ...state.settings };   // completa ajustes novos
+state.settings.radius = Math.min(100, state.settings.radius);   // arredondamento máximo: 100 px
 
 /* Salva com atraso de 300 ms para não gravar a cada tecla */
 let saveTimer;
