@@ -71,6 +71,9 @@ const DEFAULTS = {
 /* Limites do rodapé exportado */
 const MAXW = 1080, MAXH = 600;
 
+/* Largura máxima do rodapé fino (título ao lado), igual à do quadro de vídeo */
+const MAXW_INLINE = 1920;
+
 /* Tamanho do quadro de vídeo */
 const VW = 1920, VH = 1080;
 
@@ -527,6 +530,24 @@ $("addSec").addEventListener("click", () => {
 /* Controles deslizantes (mostram o valor em px no <output>) */
 const RANGES = ["logoH", "maxW", "gap", "secGap", "pad", "radius", "titleSize", "lineW", "vMargin"];
 
+/* Controles rápidos acima da prévia (formato + arredondamento) */
+function syncQuick() {
+  const S = state.settings;
+  $("q_radius").value = S.radius;
+  $("oq_radius").textContent = S.radius + " px";
+  document.querySelectorAll(".seg button").forEach(b => b.setAttribute("aria-pressed", b.dataset.layout === S.layout ? "true" : "false"));
+}
+document.querySelectorAll(".seg button").forEach(b => b.addEventListener("click", () => {
+  state.settings.layout = b.dataset.layout;
+  syncSettingsUI();
+  changed(false);
+}));
+$("q_radius").addEventListener("input", e => {
+  state.settings.radius = +e.target.value;
+  syncSettingsUI();
+  changed(false);
+});
+
 /* Copia state.settings para os campos da tela */
 function syncSettingsUI() {
   const S = state.settings;
@@ -537,12 +558,14 @@ function syncSettingsUI() {
   $("s_align").value = S.align;
   $("s_upper").checked = S.upper;
   ["titleColor", "lineColor", "bg"].forEach(k => $("s_" + k).value = S[k]);
+  syncQuick();
 }
 
 // Deslizantes
 RANGES.forEach(k => $("s_" + k).addEventListener("input", e => {
   state.settings[k] = +e.target.value;
   $("o_" + k).textContent = e.target.value + " px";
+  syncQuick();
   changed(false);
 }));
 
@@ -550,6 +573,7 @@ RANGES.forEach(k => $("s_" + k).addEventListener("input", e => {
 ["layout", "titleWeight", "align"].forEach(k => $("s_" + k).addEventListener("change", e => {
   state.settings[k] = e.target.value;
   if (k === "titleWeight") loadWeight();     // carrega o peso da fonte antes de desenhar
+  syncQuick();
   changed(false);
 }));
 
@@ -657,7 +681,66 @@ function build(secs, mode, k) {
   });
   let W, H;
 
-  if (mode === "row") {
+  if (mode === "inline") {
+    /* ---- TÍTULO AO LADO (rodapé fino) ----
+       O título fica à esquerda de cada grupo de logos, centralizado na
+       altura. Títulos longos quebram em até 2 linhas (ex.: “Apoio /
+       educacional”). Margem vertical menor e lateral maior deixam o
+       rodapé fino. Largura máxima: 1920 px. */
+    const padY = pad * .55, padX = pad * 1.8;
+    const tGapX = Math.max(10, ts * 1.6);     // espaço título → logos
+    const lineH = ts * 1.2;
+    blocks.forEach(b => {
+      b.cw = b.sizes.reduce((a, z) => a + z.w, 0) + gap * (b.sizes.length - 1);
+      b.mh = Math.max(...b.sizes.map(z => z.h));
+      b.lines = [];
+      if (b.t) {
+        const words = b.t.split(/\s+/);
+        const limit = Math.max(ts * 7, ...words.map(w => measureCtx.measureText(w).width));
+        let cur = "";
+        words.forEach(w => {
+          const test = cur ? cur + " " + w : w;
+          if (cur && b.lines.length < 1 && measureCtx.measureText(test).width > limit) { b.lines.push(cur); cur = w; }
+          else cur = test;
+        });
+        if (cur) b.lines.push(cur);
+      }
+      b.tw2 = b.lines.length ? Math.max(...b.lines.map(l => measureCtx.measureText(l).width)) : 0;
+      b.th = b.lines.length * lineH;
+      b.w = (b.tw2 ? b.tw2 + tGapX : 0) + b.cw;
+    });
+    const band = Math.max(...blocks.map(b => Math.max(b.mh, b.th)));
+    W = 2 * padX + blocks.reduce((a, b) => a + b.w, 0) + (blocks.length - 1) * (2 * sg + lw);
+    // “Ocupar largura total”: distribui a sobra entre os grupos
+    if (S.fill && W < MAXW_INLINE) {
+      const extra = (MAXW_INLINE - W) / blocks.length;
+      blocks.forEach(b => b.extra = extra);
+      W = MAXW_INLINE;
+    }
+    H = 2 * padY + band;
+
+    let x = padX;
+    blocks.forEach((b, i) => {
+      const extra = b.extra || 0;
+      let cx = x + extra / 2;
+      if (b.lines.length) {
+        els.push({ type: "text", text: b.lines.join(" "), lines: b.lines, lh: lineH,
+                   x: cx, y: padY + (band - b.th) / 2, h: b.th, w: b.tw2, align: "left", size: ts });
+        cx += b.tw2 + tGapX;
+      }
+      b.x.items.forEach((it, j) => {
+        const z = b.sizes[j];
+        els.push({ type: "logo", img: it.img, name: it.l.name, x: cx, y: padY + (band - z.h) / 2, w: z.w, h: z.h });
+        cx += z.w + gap;
+      });
+      x += b.w + extra;
+      if (i < blocks.length - 1) {
+        if (lw > 0) els.push({ type: "line", x: x + sg, y: padY, w: lw, h: band });
+        x += 2 * sg + lw;
+      }
+    });
+
+  } else if (mode === "row") {
     /* ---- SEÇÕES LADO A LADO ----
        Cada seção é uma coluna; linhas divisórias verticais entre elas.
        Todos os logos ficam centralizados numa mesma faixa de altura. */
@@ -743,7 +826,7 @@ function build(secs, mode, k) {
 
   W = Math.ceil(W);
   H = Math.ceil(H);
-  return { W, H, els, k, mode, fits: W <= MAXW && H <= MAXH };
+  return { W, H, els, k, mode, fits: W <= (mode === "inline" ? MAXW_INLINE : MAXW) && H <= MAXH };
 }
 
 /* Escolhe o layout final: começa em 100% e vai reduzindo de 2,5% em
@@ -796,7 +879,9 @@ function drawEl(ctx, e, S, ox = 0, oy = 0) {
     ctx.fillStyle = S.titleColor;
     ctx.textBaseline = "middle";
     ctx.textAlign = e.align === "center" ? "center" : "left";
-    ctx.fillText(e.text, e.x - ox, e.y + e.h / 2 - oy);
+    // Título em mais de uma linha (rodapé fino) ou em uma linha só
+    if (e.lines && e.lines.length > 1) e.lines.forEach((ln, i) => ctx.fillText(ln, e.x - ox, e.y + e.lh * (i + .5) - oy));
+    else ctx.fillText(e.text, e.x - ox, e.y + e.h / 2 - oy);
   } else if (e.type === "logo" && e.img) {
     ctx.imageSmoothingEnabled = true;
     ctx.imageSmoothingQuality = "high";
@@ -850,7 +935,7 @@ function render() {
 
   $("dims").textContent = current.W + " × " + current.H + " px";
   $("fitnote").textContent = current.k < 1
-    ? "· logos reduzidos a " + Math.round(current.k * 100) + "% para caber em 1080 × 600"
+    ? "· logos reduzidos a " + Math.round(current.k * 100) + "% para caber em " + (current.mode === "inline" ? "1920 px de largura" : "1080 × 600")
     : "";
   drawMini();
 }
@@ -1462,15 +1547,68 @@ function ghError(e) {
   if (e && e.msg) return e.msg;
   if (!e || !e.status) return "Sem conexão com o GitHub. Verifique a internet e tente de novo.";
   if (e.status === 401) return "Chave inválida ou expirada. Gere uma nova chave no GitHub.";
-  if (e.status === 403 || e.status === 404) return "A chave não tem acesso de escrita a este repositório. Confira o nome do repositório e a permissão “Contents: Read and write”.";
+  if (e.status === 403) return "O GitHub recusou a gravação. Confira se a chave tem “Contents: Read and write” e se não expirou" + ((e.body && e.body.message) ? " (GitHub: “" + e.body.message + "”)" : "") + ".";
+  if (e.status === 404) return "Repositório, branch ou arquivo não encontrado. Saia do modo administrador e conecte de novo para refazer o diagnóstico.";
   return "O GitHub recusou a operação (erro " + e.status + "). Tente de novo em instantes.";
 }
 
-/* Confere a chave e liga o modo administrador */
+/* Confere a chave e liga o modo administrador.
+   Faz um diagnóstico em 4 etapas para dizer exatamente o que corrigir:
+     1. a chave é válida?                       (GET /user)
+     2. a chave enxerga o repositório?          (GET /repos/…)
+     3. a branch existe?                        (GET /git/ref/heads/…)
+     4. a chave pode gravar (Contents: write)?  (cria um blob de teste,
+        que não altera nenhum arquivo e é descartado pelo GitHub) */
 async function verifyAdmin() {
-  const r = await gh("/repos/" + admin.repo);
-  if (!r.permissions || !r.permissions.push) throw { msg: "Sua conta não tem permissão de escrita neste repositório." };
-  try { const u = await gh("/user"); admin.login = u.login || ""; } catch (e) {}
+  const why = e => (e && e.body && e.body.message) ? " (GitHub: “" + e.body.message + "”)" : "";
+
+  // 1. Chave válida
+  try {
+    const u = await gh("/user");
+    admin.login = u.login || "";
+  } catch (e) {
+    if (e.status === 401) throw { msg: "Chave inválida ou expirada. Copie a chave completa (começa com github_pat_) ou gere uma nova." };
+    if (!e.status) throw e;
+    // fine-grained tokens podem não ler /user; segue para as próximas etapas
+  }
+
+  // 2. Repositório visível para a chave
+  let r;
+  try {
+    r = await gh("/repos/" + admin.repo);
+  } catch (e) {
+    if (e.status === 404) throw { msg:
+      "A chave não enxerga o repositório “" + admin.repo + "”. Confira: " +
+      "(1) o nome exato no formato usuario/repositorio; " +
+      "(2) na chave, “Repository access” → “Only select repositories” inclui este repositório; " +
+      "(3) “Resource owner” da chave é a mesma conta ou organização dona do repositório." };
+    if (e.status === 403) throw { msg: "O GitHub bloqueou a chave neste repositório. Se ele pertence a uma organização, a chave pode estar aguardando aprovação de um administrador da organização" + why(e) + "." };
+    throw e;
+  }
+  if (r.permissions && r.permissions.push === false) throw { msg: "Sua conta do GitHub só tem leitura neste repositório. O dono precisa adicioná-la em Settings → Collaborators." };
+
+  // 3. Branch
+  try {
+    await gh("/repos/" + admin.repo + "/git/ref/heads/" + encodeURIComponent(admin.branch));
+  } catch (e) {
+    if (e.status === 404) {
+      if (r.default_branch && r.default_branch !== admin.branch) {
+        admin.branch = r.default_branch;   // usa a branch principal do repositório
+      } else throw { msg: "A branch “" + admin.branch + "” não existe neste repositório." };
+    } else throw e;
+  }
+
+  // 4. Permissão de escrita (Contents: Read and write)
+  try {
+    await gh("/repos/" + admin.repo + "/git/blobs", { method: "POST", body: JSON.stringify({ content: "teste", encoding: "utf-8" }) });
+  } catch (e) {
+    if (e.status === 403 || e.status === 404) throw { msg:
+      "A chave enxerga o repositório, mas não pode gravar. Edite a chave no GitHub (Settings → Developer settings → " +
+      "Fine-grained tokens → sua chave → Edit) e, em “Repository permissions”, mude “Contents” para “Read and write”. " +
+      "Depois clique em “Update” e conecte de novo" + why(e) + "." };
+    throw e;
+  }
+
   admin.on = true;
   refreshAdminUI();
   renderLib();

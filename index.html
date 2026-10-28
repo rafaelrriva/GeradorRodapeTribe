@@ -141,6 +141,23 @@
     </div>
 
     <!-- ---------------------------------------------------------------
+         CONTROLES RÁPIDOS
+         Formato: “Título acima” (padrão) ou “Título ao lado” (rodapé
+         fino, até 1920 px). Arredondamento: no máximo, as pontas ficam
+         totalmente redondas (formato pílula).
+         --------------------------------------------------------------- -->
+    <div class="quick">
+      <div class="seg" role="group" aria-label="Formato do rodapé">
+        <button type="button" data-layout="row" aria-pressed="false">Título acima</button>
+        <button type="button" data-layout="inline" aria-pressed="false">Título ao lado</button>
+      </div>
+      <label class="qr" for="q_radius">Arredondamento
+        <input type="range" id="q_radius" min="0" max="200" step="1">
+        <output id="oq_radius"></output>
+      </label>
+    </div>
+
+    <!-- ---------------------------------------------------------------
          PRÉVIA (palco xadrez = transparência)
          O <canvas id="cv"> é desenhado pelo script.js (função render).
          --------------------------------------------------------------- -->
@@ -208,11 +225,12 @@
       <label for="s_layout">Disposição</label>
       <select id="s_layout">
         <option value="row">Seções lado a lado</option>
+        <option value="inline">Título ao lado (rodapé fino)</option>
         <option value="stack">Seções empilhadas</option>
         <option value="auto">Automática</option>
       </select>
     </div>
-    <label class="check"><input type="checkbox" id="s_fill"> Ocupar largura total (1080 px)</label>
+    <label class="check"><input type="checkbox" id="s_fill"> Ocupar largura total (1080 px · 1920 px no rodapé fino)</label>
 
     <!-- Tamanho e espaçamento dos logos e da caixa -->
     <div class="field"><label for="s_logoH">Altura dos logos <output id="o_logoH"></output></label><input type="range" id="s_logoH" min="24" max="140" step="1"></div>
@@ -220,7 +238,7 @@
     <div class="field"><label for="s_gap">Espaço entre logos <output id="o_gap"></output></label><input type="range" id="s_gap" min="6" max="80" step="1"></div>
     <div class="field"><label for="s_secGap">Espaço até a linha <output id="o_secGap"></output></label><input type="range" id="s_secGap" min="8" max="80" step="1"></div>
     <div class="field"><label for="s_pad">Margem interna <output id="o_pad"></output></label><input type="range" id="s_pad" min="10" max="80" step="1"></div>
-    <div class="field"><label for="s_radius">Arredondamento <output id="o_radius"></output></label><input type="range" id="s_radius" min="0" max="80" step="1"></div>
+    <div class="field"><label for="s_radius">Arredondamento <output id="o_radius"></output></label><input type="range" id="s_radius" min="0" max="200" step="1"></div>
 
     <hr class="sep">
 
