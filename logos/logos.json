@@ -63,7 +63,7 @@
   "templates": [
     {"nome": "TribeMD", "realizacao": ["TribeMD"]},
     {"nome": "Oncologia Brasil", "realizacao": ["Oncologia Brasil", "TribeMD"]},
-    {"nome": "Hemomeeting", "realizacao": ["Hemomeeting", "TribeMD"]}
+    {"nome": "Hemomeeting", "realizacao": ["Hemomeeting", "TribeMD"]},
     {"nome": "Bipp", "realizacao": ["Grupo bipp", "TribeMD"]}
   ]
 }
