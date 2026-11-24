@@ -353,6 +353,37 @@
   </div>
 </dialog>
 
+<!-- =====================================================================
+     JANELA DE RECORTE (script.js, seção 15b)
+     Arraste sobre o logo para escolher a área; o recorte vira um logo
+     novo na biblioteca. O logo original não é alterado.
+     ===================================================================== -->
+<dialog id="cropDlg" class="wide">
+  <div class="dlg">
+    <div class="sec-top">
+      <h2 id="cropTitle" class="dlg-title">Recortar logo</h2>
+      <button class="ico del" id="cropX" type="button" aria-label="Fechar">×</button>
+    </div>
+    <p class="note">Arraste sobre o logo para marcar a área. As margens transparentes são removidas sozinhas.</p>
+    <div class="cropstage"><canvas id="cropCv" aria-label="Área de recorte"></canvas></div>
+    <div class="croprow">
+      <span class="note">Seleção: <b id="cropSize"></b></span>
+      <button class="btn" id="cropReset" type="button">Selecionar tudo</button>
+    </div>
+    <div class="row2">
+      <div class="field"><label for="cropName">Nome do novo logo</label><input class="txt" id="cropName" autocomplete="off"></div>
+      <div class="field"><label for="cropGroup">Categoria</label>
+        <select id="cropGroup"><option value="grupo">Grupo</option><option value="farma">Farmacêuticas</option></select></div>
+    </div>
+    <p class="note" id="cropInfo"></p>
+    <p class="note" id="cropNote" role="alert"></p>
+    <div class="dlg-actions">
+      <button class="btn" id="cropCancel" type="button">Cancelar</button>
+      <button class="btn primary" id="cropSave" type="button">Salvar recorte</button>
+    </div>
+  </div>
+</dialog>
+
 <!-- Aviso flutuante (mensagens curtas de confirmação e erro) -->
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 

@@ -22,6 +22,7 @@
     13. Abas do painel lateral
     14. Templates básicos
     15. Área do administrador (publicação via GitHub)
+   15b. Recortar logo (cria uma nova instância)
     16. Inicialização
    ===================================================================== */
 
@@ -226,6 +227,14 @@ function renderLib() {
       tile.addEventListener("keydown", e => {
         if (e.key === "Enter" || e.key === " ") { e.preventDefault(); add(); }
       });
+
+      // Recortar: cria um logo NOVO a partir de uma parte deste (seção 15b)
+      const cut = document.createElement("button");
+      cut.type = "button"; cut.className = "cut"; cut.title = "Recortar e salvar como novo logo";
+      cut.setAttribute("aria-label", "Recortar " + l.name);
+      cut.innerHTML = '<svg class="i" viewBox="0 0 24 24"><circle cx="6" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><path d="M20 4 8.1 15.9M14.5 14.5 20 20M8.1 8.1 12 12"/></svg>';
+      cut.addEventListener("click", e => { e.stopPropagation(); openCrop(l); });
+      tile.append(cut);
 
       // Logos enviados podem ser excluídos (os que vêm no site não).
       // 1º clique pede confirmação; 2º clique (em até 2,6 s) exclui.
@@ -1789,6 +1798,145 @@ $("adminOut").addEventListener("click", () => {
   forgetAdmin(); refreshAdminUI(); renderLib();
   toast("Você saiu do modo administrador e a chave foi apagada deste navegador.", 4000);
 });
+
+
+/* =====================================================================
+   15b. RECORTAR LOGO
+   ---------------------------------------------------------------------
+   Cria um logo NOVO a partir de uma parte de outro (ex.: só o símbolo
+   do TribeMD, sem o “From credibility to care”). O original não muda.
+     1. arraste sobre a imagem para marcar a área (dá para redesenhar)
+     2. as margens transparentes da área são recortadas automaticamente
+     3. salvar: no modo administrador vira um commit no GitHub (para
+        todos); fora dele, fica salvo só neste navegador
+   ===================================================================== */
+const cropDlg = $("cropDlg");
+const cropCv = $("cropCv");
+let crop = null;   // { logo, img, scale, sel: {x,y,w,h} em px da imagem }
+
+function openCrop(l) {
+  const img = new Image();
+  img.onload = () => {
+    // Tela de trabalho: até 520 × 300 px, mantendo a proporção
+    const scale = Math.min(520 / img.naturalWidth, 300 / img.naturalHeight, 4);
+    cropCv.width = Math.round(img.naturalWidth * scale);
+    cropCv.height = Math.round(img.naturalHeight * scale);
+    crop = { logo: l, img, scale, sel: { x: 0, y: 0, w: img.naturalWidth, h: img.naturalHeight } };
+    $("cropName").value = l.name + " (símbolo)";
+    $("cropGroup").value = l.group === "grupo" ? "grupo" : "farma";
+    $("cropTitle").textContent = "Recortar – " + l.name;
+    $("cropNote").textContent = "";
+    $("cropSave").textContent = admin.on ? "Publicar recorte" : "Salvar recorte";
+    $("cropInfo").textContent = admin.on
+      ? "Modo administrador: o recorte será publicado para todos."
+      : "O recorte fica salvo só neste navegador.";
+    drawCrop();
+    if (cropDlg.showModal) cropDlg.showModal(); else cropDlg.setAttribute("open", "");
+  };
+  img.onerror = () => toast("Não foi possível abrir este logo para recorte.", 4000);
+  img.src = l.src;
+}
+const closeCrop = () => { if (cropDlg.close) cropDlg.close(); else cropDlg.removeAttribute("open"); };
+
+/* Desenha a imagem, escurece fora da seleção e mostra o retângulo */
+function drawCrop() {
+  const ctx = cropCv.getContext("2d"), s = crop.scale, r = crop.sel;
+  ctx.clearRect(0, 0, cropCv.width, cropCv.height);
+  ctx.drawImage(crop.img, 0, 0, cropCv.width, cropCv.height);
+  ctx.fillStyle = "rgba(42,42,42,.45)";
+  ctx.beginPath();
+  ctx.rect(0, 0, cropCv.width, cropCv.height);
+  ctx.rect(r.x * s, r.y * s, r.w * s, r.h * s);
+  ctx.fill("evenodd");
+  ctx.strokeStyle = "#563f99"; ctx.lineWidth = 2; ctx.setLineDash([6, 4]);
+  ctx.strokeRect(r.x * s + 1, r.y * s + 1, Math.max(0, r.w * s - 2), Math.max(0, r.h * s - 2));
+  ctx.setLineDash([]);
+  $("cropSize").textContent = Math.round(r.w) + " × " + Math.round(r.h) + " px";
+}
+
+/* Arrastar para selecionar (mouse, toque ou caneta) */
+let cropDrag = null;
+const cropPoint = e => {
+  const b = cropCv.getBoundingClientRect();
+  return {
+    x: Math.max(0, Math.min(crop.img.naturalWidth, (e.clientX - b.left) / b.width * crop.img.naturalWidth)),
+    y: Math.max(0, Math.min(crop.img.naturalHeight, (e.clientY - b.top) / b.height * crop.img.naturalHeight))
+  };
+};
+cropCv.addEventListener("pointerdown", e => { cropDrag = cropPoint(e); cropCv.setPointerCapture(e.pointerId); });
+cropCv.addEventListener("pointermove", e => {
+  if (!cropDrag) return;
+  const p = cropPoint(e);
+  crop.sel = { x: Math.min(p.x, cropDrag.x), y: Math.min(p.y, cropDrag.y), w: Math.abs(p.x - cropDrag.x), h: Math.abs(p.y - cropDrag.y) };
+  drawCrop();
+});
+cropCv.addEventListener("pointerup", () => {
+  cropDrag = null;
+  // Clique sem arrastar = volta a seleção para a imagem inteira
+  if (crop.sel.w < 4 || crop.sel.h < 4) { crop.sel = { x: 0, y: 0, w: crop.img.naturalWidth, h: crop.img.naturalHeight }; drawCrop(); }
+});
+$("cropReset").addEventListener("click", () => { crop.sel = { x: 0, y: 0, w: crop.img.naturalWidth, h: crop.img.naturalHeight }; drawCrop(); });
+
+/* Gera o PNG da área escolhida, sem as margens transparentes */
+async function cropBlob() {
+  const r = crop.sel;
+  const w = Math.max(1, Math.round(r.w)), hgt = Math.max(1, Math.round(r.h));
+  const c = document.createElement("canvas"); c.width = w; c.height = hgt;
+  const ctx = c.getContext("2d");
+  ctx.drawImage(crop.img, Math.round(r.x), Math.round(r.y), w, hgt, 0, 0, w, hgt);
+  const d = ctx.getImageData(0, 0, w, hgt).data;
+  let x0 = w, y0 = hgt, x1 = -1, y1 = -1;
+  for (let y = 0; y < hgt; y++) for (let x = 0; x < w; x++) {
+    if (d[(y * w + x) * 4 + 3] > 8) { if (x < x0) x0 = x; if (x > x1) x1 = x; if (y < y0) y0 = y; if (y > y1) y1 = y; }
+  }
+  if (x1 < 0) return null;
+  const o = document.createElement("canvas"); o.width = x1 - x0 + 1; o.height = y1 - y0 + 1;
+  o.getContext("2d").drawImage(c, x0, y0, o.width, o.height, 0, 0, o.width, o.height);
+  return new Promise(res => o.toBlob(res, "image/png"));
+}
+
+/* Salvar o recorte como nova instância */
+$("cropSave").addEventListener("click", async () => {
+  const name = $("cropName").value.trim();
+  const group = $("cropGroup").value;
+  if (!name) { $("cropNote").textContent = "Dê um nome ao novo logo."; $("cropName").focus(); return; }
+  if (lib && [...lib.values()].some(l => slug(l.name) === slug(name) && l.src)) {
+    $("cropNote").textContent = "Já existe um logo com esse nome. Escolha outro."; return;
+  }
+  const blob = await cropBlob();
+  if (!blob) { $("cropNote").textContent = "A área escolhida está vazia (só transparência)."; return; }
+  const btn = $("cropSave"), label = btn.textContent;
+  btn.disabled = true; btn.textContent = admin.on ? "Publicando…" : "Salvando…";
+  try {
+    const dataUrl = await blobToDataUrl(blob);
+    if (admin.on) {
+      const folder = group === "grupo" ? "grupo" : "farmaceuticas";
+      const b64 = dataUrl.split(",")[1];
+      await publish("Novo logo (recorte de " + crop.logo.name + "): " + name, m => {
+        const list = m[folder] = m[folder] || [];
+        if (list.some(x => slug(x.nome || "") === slug(name))) throw { msg: "Já existe um logo com esse nome no repositório." };
+        const fn = pickFilename(name, list, false);
+        list.push({ nome: name, arquivo: fn });
+        pendingSrc[folder + "/" + fn] = dataUrl;
+        return { files: [{ path: "logos/" + folder + "/" + fn, base64: b64 }] };
+      });
+      toast("“" + name + "” publicado. Aparece para todos em 1 a 2 minutos.", 5000);
+    } else {
+      localLogos.push({ id: "l_" + slug(name).slice(0, 40) + "-" + uid(), name, group, dataUrl });
+      const ok = saveLocalLogos();
+      rebuildLib(); renderLib(); renderSecs(); scheduleRender();
+      toast(ok ? "“" + name + "” salvo neste navegador." : "Recorte adicionado até recarregar a página (armazenamento cheio).", 4000);
+    }
+    closeCrop();
+  } catch (e) {
+    console.error(e);
+    $("cropNote").textContent = ghError(e);
+  } finally {
+    btn.disabled = false; btn.textContent = label;
+  }
+});
+$("cropCancel").addEventListener("click", closeCrop);
+$("cropX").addEventListener("click", closeCrop);
 
 
 /* =====================================================================

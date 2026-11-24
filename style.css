@@ -276,6 +276,36 @@ hr.sep { border: 0; border-top: 1px solid var(--line); margin: 4px 0; width: 100
 .linkbtn:hover { color: var(--brand); }
 .linkbtn .i { width: 15px; height: 15px; }
 
+/* Botão “Recortar” (tesoura) no canto superior esquerdo do logo */
+.tile .cut {
+  position: absolute; top: 3px; left: 3px;
+  width: 24px; height: 24px; border: 0; border-radius: 6px;
+  background: rgba(86, 63, 153, .12); color: #563f99;
+  display: none; align-items: center; justify-content: center;
+  cursor: pointer; padding: 0;
+}
+.tile .cut .i { width: 14px; height: 14px; }
+.tile:hover .cut, .tile:focus-within .cut { display: flex; }
+.tile .cut:hover { background: #563f99; color: #f3f3f3; }
+
+/* Janela de recorte: mais larga e com xadrez de transparência */
+dialog.wide { width: min(600px, 94vw); }
+.cropstage {
+  display: flex; justify-content: center; padding: 10px; border-radius: 10px;
+  border: 1px solid var(--line);
+  background-color: #f7f6fa;
+  background-image:
+    linear-gradient(45deg, #e9e7ee 25%, transparent 25%),
+    linear-gradient(-45deg, #e9e7ee 25%, transparent 25%),
+    linear-gradient(45deg, transparent 75%, #e9e7ee 75%),
+    linear-gradient(-45deg, transparent 75%, #e9e7ee 75%);
+  background-size: 14px 14px;
+  background-position: 0 0, 0 7px, 7px -7px, -7px 0;
+}
+#cropCv { max-width: 100%; height: auto; cursor: crosshair; touch-action: none; }
+.croprow { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.croprow .btn { padding: 6px 10px; font-size: 12px; }
+
 /* Botão “×” de excluir logo enviado (vermelho). Primeiro clique pede
    confirmação (.confirm → “Excluir?”), segundo clique exclui. */
 .tile .x {
