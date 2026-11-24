@@ -57,7 +57,8 @@
     {"nome": "Cristália", "arquivo": ""},
     {"nome": "Zodiac", "arquivo": ""},
     {"nome": "Apsen", "arquivo": "apsen.png"},
-    {"nome": "Mantecorp Farmasa", "arquivo": ""}
+    {"nome": "Mantecorp Farmasa", "arquivo": ""},
+    {"nome": "Libbs (símbolo)", "arquivo": "libbs-simbolo.png"}
   ],
 
   "templates": [
